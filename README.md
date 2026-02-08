@@ -88,7 +88,7 @@ p_{n+1/2} = p_n + f(θ_n, p_n)Δt/2
 p_{n+1} = p_{n+1/2} + f(θ_{n+1}, p_{n+1/2})Δt/2
 ```
 
-#### 4. Yoshida4 (Order 4) ⭐ Recommended
+#### 4. Yoshida4 (Order 4)
 Fourth-order composition method with coefficients:
 ```
 w₀ = -1.702414383919315

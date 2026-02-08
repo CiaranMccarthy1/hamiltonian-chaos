@@ -3,7 +3,7 @@ mod integrator;
 mod analysis;
 
 use system::{DoublePendulum, HamiltonianSystem};
-use integrator::LeapfrogIntegrator;
+use integrator::Yoshida4;
 use analysis::LyapunovAnalyzer;
 use std::fs::File;
 use std::io::Write;
@@ -18,7 +18,7 @@ const M2: f64 = 1.0;
 fn main() -> std::io::Result<()> {
     println!("=== Hamiltonian Chaos Engine ===");
     println!("System: Double Pendulum");
-    println!("Integrator: Leapfrog (Symplectic)\n");
+    println!("Integrator: Yoshida\n");
 
     let dt = 0.001;
     let max_time = 60.0;
@@ -32,7 +32,7 @@ fn main() -> std::io::Result<()> {
     println!("  Steps = {}", steps);
     println!("  Perturbation = {:.1e}\n", perturbation);
 
-    let resolution = 18;
+    let resolution = 36;
     let initial_conditions: Vec<(f64, f64)> = (0..resolution)
         .flat_map(|i| {
             (0..resolution).map(move |j| {
