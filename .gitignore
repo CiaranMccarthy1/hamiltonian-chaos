@@ -1,4 +1,13 @@
+# Rust artifacts
 /target
+Cargo.lock
+
+# Data and Results (The "Heavy" Stuff)
 *.json
 *.bin
+*.h5
+*.csv
+
+# IDE specific
 .idea/
+.vscode/
