@@ -32,7 +32,7 @@ fn main() -> std::io::Result<()> {
     println!("  Steps = {}", steps);
     println!("  Perturbation = {:.1e}\n", perturbation);
 
-    let resolution = 36;
+    let resolution = 360;
     let initial_conditions: Vec<(f64, f64)> = (0..resolution)
         .flat_map(|i| {
             (0..resolution).map(move |j| {
@@ -126,6 +126,6 @@ fn main() -> std::io::Result<()> {
     let mut file = File::create("chaos_results.json")?;
     file.write_all(json.as_bytes())?;
 
-    println!("\n✓ Results exported to chaos_results.json");
+    println!("\n✓ results exported to chaos_results.json");
     Ok(())
 }

@@ -2,11 +2,12 @@
 /target
 Cargo.lock
 
-# Data and Results (The "Heavy" Stuff)
+# Data and results (The "Heavy" Stuff)
 *.json
 *.bin
 *.h5
 *.csv
+*png
 
 # IDE specific
 .idea/
