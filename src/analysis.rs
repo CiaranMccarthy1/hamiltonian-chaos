@@ -1,5 +1,5 @@
 use crate::system::{HamiltonianSystem, State};
-use crate::integrator::RungeKutta4;
+use crate::integrator::LeapfrogIntegrator;
 use nalgebra::Normed;
 
 pub struct LyapunovAnalyzer {
@@ -27,8 +27,8 @@ impl LyapunovAnalyzer {
     }
 
     pub fn step<S: HamiltonianSystem>(&mut self, system: &S) {
-        self.main_trajectory = RungeKutta4::step(system, &self.main_trajectory, self.dt);
-        self.shadow_trajectory = RungeKutta4::step(system, &self.shadow_trajectory, self.dt);
+        self.main_trajectory = LeapfrogIntegrator::step(system, &self.main_trajectory, self.dt);
+        self.shadow_trajectory = LeapfrogIntegrator::step(system, &self.shadow_trajectory, self.dt);
         self.total_time += self.dt;
     }
 
