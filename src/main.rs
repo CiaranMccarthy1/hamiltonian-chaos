@@ -5,127 +5,83 @@ mod analysis;
 use system::{DoublePendulum, HamiltonianSystem};
 use integrator::Yoshida4;
 use analysis::LyapunovAnalyzer;
-use std::fs::File;
-use std::io::Write;
 use rayon::prelude::*;
-
-const G: f64 = 9.81;
-const L1: f64 = 1.0;
-const L2: f64 = 1.0;
-const M1: f64 = 1.0;
-const M2: f64 = 1.0;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 
 fn main() -> std::io::Result<()> {
-    println!("=== Hamiltonian Chaos Engine ===");
-    println!("System: Double Pendulum");
-    println!("Integrator: Yoshida\n");
-
+    let res_atlas = 30;
     let dt = 0.001;
-    let max_time = 60.0;
-    let renormalization_interval = 5;
-    let steps = (max_time / dt) as usize;
+    let max_time_atlas = 600.0;
+    let steps_atlas = (max_time_atlas / dt) as usize;
     let perturbation = 1e-8;
 
-    println!("Configuration:");
-    println!("  dt = {} s", dt);
-    println!("  Duration = {} s", max_time);
-    println!("  Steps = {}", steps);
-    println!("  Perturbation = {:.1e}\n", perturbation);
+    println!("Calculating Scientific Atlas ({}x{} points)...", res_atlas, res_atlas);
 
-    let resolution = 360;
-    let initial_conditions: Vec<(f64, f64)> = (0..resolution)
-        .flat_map(|i| {
-            (0..resolution).map(move |j| {
-                let theta1 = i as f64 * 2.0 * std::f64::consts::PI / resolution as f64;
-                let theta2 = j as f64 * 2.0 * std::f64::consts::PI / resolution as f64;
-                (theta1, theta2)
-            })
-        })
-        .collect();
+    let atlas_results: Vec<_> = (0..res_atlas).into_par_iter().flat_map(|i| {
+        (0..res_atlas).into_par_iter().map(move |j| {
+            let t1 = i as f64 * 2.0 * std::f64::consts::PI / res_atlas as f64;
+            let t2 = j as f64 * 2.0 * std::f64::consts::PI / res_atlas as f64;
 
-    println!("Running {} simulations in parallel...\n", initial_conditions.len());
+            let system = DoublePendulum::new(1.0, 1.0, 1.0, 1.0, 9.81);
+            let mut analyzer = LyapunovAnalyzer::new(system.make_state(t1, t2, 0.0, 0.0), perturbation, dt);
 
-    let results: Vec<_> = initial_conditions.par_iter()
-        .map(|&(theta1, theta2)| {
-            let system = DoublePendulum::new(M1, M2, L1, L2, G);
-            let initial_state = system.make_state(theta1, theta2, 0.0, 0.0);
-
-            let mut analyzer = LyapunovAnalyzer::new(
-                initial_state,
-                perturbation,
-                dt
-            );
-
-            let initial_energy = system.energy(&initial_state);
-            let mut max_drift: f64 = 0.0;
-
-            for i in 0..steps {
+            for k in 0..steps_atlas {
                 analyzer.step(&system);
-
-                if i % renormalization_interval == 0 {
-                    analyzer.renormalize_and_get_stretch();
-                }
-
-                let current_energy = system.energy(&analyzer.main_trajectory);
-                let drift = ((current_energy - initial_energy) / initial_energy).abs();
-                max_drift = max_drift.max(drift);
+                if k % 5 == 0 { analyzer.renormalize_and_get_stretch(); }
             }
-
-            analyzer.renormalize_and_get_stretch();
-            let mle = analyzer.current_mle();
-
-            let horizon = if mle > 1e-6 {
-                (1.0 / mle) * (1.0 / perturbation).ln()
-            } else {
-                f64::INFINITY
-            };
-
-            (theta1, theta2, initial_energy, mle, horizon, max_drift)
+            (t1, t2, analyzer.current_mle())
         })
-        .collect();
+    }).collect();
 
-    println!("{:>8} {:>8} {:>12} {:>10} {:>12} {:>12}",
-             "θ₁ (rad)", "θ₂ (rad)", "Energy (J)", "λ (1/s)", "Horizon (s)", "Drift (%)");
-    println!("{}", "=".repeat(78));
-
-    for (theta1, theta2, energy, lambda, horizon, drift) in &results {
-        let regime = if *lambda < 0.01 {
-            "regular"
-        } else if *lambda < 0.5 {
-            "weakly chaotic"
-        } else {
-            "chaotic"
-        };
-
-        println!("{:8.3} {:8.3} {:12.4} {:10.4} {:12.2} {:11.2e}  [{}]",
-                 theta1, theta2, energy, lambda, horizon, drift * 100.0, regime);
+    let mut atlas_file = BufWriter::new(File::create("chaos_atlas.csv")?);
+    writeln!(atlas_file, "theta1,theta2,lambda")?;
+    for (t1, t2, l) in atlas_results {
+        writeln!(atlas_file, "{:.6},{:.6},{:.6}", t1, t2, l)?;
     }
 
-    #[derive(serde::Serialize)]
-    struct ResultData {
-        theta1_initial: f64,
-        theta2_initial: f64,
-        energy: f64,
-        lyapunov_exponent: f64,
-        predictability_horizon: f64,
-        max_energy_drift: f64,
+    let res_anim = 40;
+    let total_frames = 600;
+    let dt_anim = 0.01;
+    let steps_per_frame = 10;
+
+    println!("Generating Animation Data ({} pendulums)...", res_anim * res_anim);
+
+    let mut anim_file = BufWriter::new(File::create("animation_data.csv")?);
+    writeln!(anim_file, "frame,id,x,y,theta1,theta2")?;
+
+    // --- STEP 1: Initialize states ONCE outside the loop ---
+    let mut anim_states: Vec<_> = (0..res_anim).flat_map(|i| {
+        (0..res_anim).map(move |j| {
+            let t1 = i as f64 * 2.0 * std::f64::consts::PI / res_anim as f64;
+            let t2 = j as f64 * 2.0 * std::f64::consts::PI / res_anim as f64;
+            let system = DoublePendulum::new(1.0, 1.0, 1.0, 1.0, 9.81);
+            let state = system.make_state(t1, t2, 0.0, 0.0);
+            (system, state)
+        })
+    }).collect();
+
+    // --- STEP 2: The loop only UPDATES and SAVES the existing states ---
+    for frame in 0..total_frames {
+        // This updates the positions based on the PREVIOUS frame's positions
+        anim_states.par_iter_mut().for_each(|(sys, state)| {
+            for _ in 0..steps_per_frame {
+                Yoshida4::step(sys, state, dt_anim);
+            }
+        });
+
+        for (id, (sys, state)) in anim_states.iter().enumerate() {
+            let t1 = state[0];
+            let t2 = state[1];
+            let x = 1.0 * t1.sin() + 1.0 * (t1 + t2).sin();
+            let y = -1.0 * t1.cos() - 1.0 * (t1 + t2).cos();
+            writeln!(anim_file, "{},{},{:.4},{:.4},{:.4},{:.4}", frame, id, x, y, t1, t2)?;
+        }
     }
 
-    let export: Vec<ResultData> = results.iter()
-        .map(|(t1, t2, e, l, h, d)| ResultData {
-            theta1_initial: *t1,
-            theta2_initial: *t2,
-            energy: *e,
-            lyapunov_exponent: *l,
-            predictability_horizon: *h,
-            max_energy_drift: *d,
-        })
-        .collect();
+    let total_points = res_atlas * res_atlas;
+    println!("Successfully saved {total_points} points to chaos_atlas.csv");
+    println!("Animation frames saved to animation_data.csv");
 
-    let json = serde_json::to_string_pretty(&export)?;
-    let mut file = File::create("chaos_results.json")?;
-    file.write_all(json.as_bytes())?;
-
-    println!("\n✓ results exported to chaos_results.json");
     Ok(())
 }
