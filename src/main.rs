@@ -10,9 +10,9 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 
 fn main() -> std::io::Result<()> {
-    let res_atlas = 30;
+    let res_atlas = 180;
     let dt = 0.001;
-    let max_time_atlas = 600.0;
+    let max_time_atlas = 100.0;
     let steps_atlas = (max_time_atlas / dt) as usize;
     let perturbation = 1e-8;
 
@@ -40,10 +40,10 @@ fn main() -> std::io::Result<()> {
         writeln!(atlas_file, "{:.6},{:.6},{:.6}", t1, t2, l)?;
     }
 
-    let res_anim = 40;
+    let res_anim = 180;
     let total_frames = 600;
-    let dt_anim = 0.01;
-    let steps_per_frame = 10;
+    let dt_anim = 0.001;
+    let steps_per_frame = 50;
 
     println!("Generating Animation Data ({} pendulums)...", res_anim * res_anim);
 
@@ -66,7 +66,7 @@ fn main() -> std::io::Result<()> {
         // This updates the positions based on the PREVIOUS frame's positions
         anim_states.par_iter_mut().for_each(|(sys, state)| {
             for _ in 0..steps_per_frame {
-                Yoshida4::step(sys, state, dt_anim);
+                *state = Yoshida4::step(sys, state, dt_anim);
             }
         });
 
