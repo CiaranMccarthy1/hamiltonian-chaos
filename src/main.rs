@@ -23,7 +23,7 @@ fn main() -> std::io::Result<()> {
             let t1 = i as f64 * 2.0 * std::f64::consts::PI / res_atlas as f64;
             let t2 = j as f64 * 2.0 * std::f64::consts::PI / res_atlas as f64;
 
-            let system = DoublePendulum::new(1.0, 1.0, 1.0, 1.0, 9.81);
+            let system = DoublePendulum::new(0.5, 0.5, 1.0, 1.0, 9.81);
             let mut analyzer = LyapunovAnalyzer::new(system.make_state(t1, t2, 0.0, 0.0), perturbation, dt);
 
             for k in 0..steps_atlas {
@@ -55,7 +55,7 @@ fn main() -> std::io::Result<()> {
         (0..res_anim).map(move |j| {
             let t1 = i as f64 * 2.0 * std::f64::consts::PI / res_anim as f64;
             let t2 = j as f64 * 2.0 * std::f64::consts::PI / res_anim as f64;
-            let system = DoublePendulum::new(1.0, 1.0, 1.0, 1.0, 9.81);
+            let system = DoublePendulum::new(10.0, 10.0, 1.0, 1.0, 9.81);
             let state = system.make_state(t1, t2, 0.0, 0.0);
             (system, state)
         })
