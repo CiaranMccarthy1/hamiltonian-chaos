@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 def calculate_fractal_dimension(df, threshold=None):
     res = int(np.sqrt(len(df)))
     L = df['lambda'].values.reshape(res, res)
-    L_log = np.log10(L + 1e-6)
+    L_clean = np.clip(L, 1e-9, 10.0)
+    L_log = np.log10(L_clean)
 
     if threshold is None:
         threshold = np.mean(L_log)

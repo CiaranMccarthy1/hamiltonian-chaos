@@ -10,11 +10,20 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 
 fn main() -> std::io::Result<()> {
+
+    let m1 = 5.0;
+    let m2 = 0.5;
+    let l1 = 1.0;
+    let l2 = 2.0;
+    let g = 9.81;
+
     let res_atlas = 180;
     let dt = 0.001;
     let max_time_atlas = 100.0;
     let steps_atlas = (max_time_atlas / dt) as usize;
     let perturbation = 1e-8;
+
+    let filename = format!("atlas_m{}_m{}_l{}_l{}.csv", m1, m2, l1, l2);
 
     println!("Calculating Scientific Atlas ({}x{} points)...", res_atlas, res_atlas);
 
@@ -23,7 +32,7 @@ fn main() -> std::io::Result<()> {
             let t1 = i as f64 * 2.0 * std::f64::consts::PI / res_atlas as f64;
             let t2 = j as f64 * 2.0 * std::f64::consts::PI / res_atlas as f64;
 
-            let system = DoublePendulum::new(0.5, 0.5, 1.0, 1.0, 9.81);
+            let system = DoublePendulum::new(m1, m2, l1, l2, g);
             let mut analyzer = LyapunovAnalyzer::new(system.make_state(t1, t2, 0.0, 0.0), perturbation, dt);
 
             for k in 0..steps_atlas {
@@ -47,6 +56,7 @@ fn main() -> std::io::Result<()> {
 
     println!("Generating Animation Data ({} pendulums)...", res_anim * res_anim);
 
+
     let mut anim_file = BufWriter::new(File::create("animation_data.csv")?);
     writeln!(anim_file, "frame,id,x,y,theta1,theta2")?;
 
@@ -55,7 +65,7 @@ fn main() -> std::io::Result<()> {
         (0..res_anim).map(move |j| {
             let t1 = i as f64 * 2.0 * std::f64::consts::PI / res_anim as f64;
             let t2 = j as f64 * 2.0 * std::f64::consts::PI / res_anim as f64;
-            let system = DoublePendulum::new(10.0, 10.0, 1.0, 1.0, 9.81);
+            let system = DoublePendulum::new(1.0, 1.0, 1.0, 1.0, 9.81);
             let state = system.make_state(t1, t2, 0.0, 0.0);
             (system, state)
         })
@@ -82,6 +92,7 @@ fn main() -> std::io::Result<()> {
     let total_points = res_atlas * res_atlas;
     println!("Successfully saved {total_points} points to chaos_atlas.csv");
     println!("Animation frames saved to animation_data.csv");
+
 
     Ok(())
 }
