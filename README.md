@@ -2,7 +2,7 @@
 
 A double pendulum simulator that tracks how chaotic the system gets across different starting positions.
 
-## What This Does
+## Overview
 
 This is a Rust project that simulates a double pendulum and measures how sensitive it is to tiny changes in starting conditions. That sensitivity is called the **Lyapunov exponent**.
 
@@ -52,7 +52,7 @@ cargo build --release
 cargo run --release
 
 # Pick a visualization
-python visual_improved.py           # Quick 2D heatmap
+python visual.py           # Quick 2D heatmap
 python 3d-visualizer.py            # 3D surface plot
 python animation.py                # Animated grid
 python fractial.py                 # Fractal dimension
